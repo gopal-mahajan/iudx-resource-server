@@ -5,6 +5,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.redis.client.*;
+import iudx.resource.server.dataLimitService.model.ConsumedDataInfo;
+import iudx.resource.server.dataLimitService.model.RedisCountRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,19 +22,6 @@ public class RedisServiceImpl implements RedisService {
         this.redisAPI = RedisAPI.api(redisClient);
     }
 
-    @Override
-    public Future<JsonObject> getJson(String key) {
-        Promise<JsonObject> promise = Promise.promise();
-        redisAPI.send(Command.JSON_GET, key).onSuccess(result -> {
-            handleGetResult(result, promise, key);
-        }).onFailure(err -> {
-            LOGGER.error("Failed to get from Redis for key {}: {}", key, err.getMessage());
-            promise.fail("Failed to get key from Redis: " + err);
-        });
-
-        return promise.future();
-    }
-
     private void handleGetResult(Response result, Promise<JsonObject> promise, String key) {
         if (result == null || result.toBuffer().length() == 0) {
             LOGGER.warn("Key does not exist in Redis: {}", key);
@@ -44,7 +33,38 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
-    public Future<JsonObject> insertJson(String key, JsonObject jsonValue) {
+    public Future<ConsumedDataInfo> getConsumedInfo(RedisCountRequest redisCountRequest) {
+        Promise<ConsumedDataInfo> promise = Promise.promise();
+        List<String> keys = List.of(redisCountRequest.getApiCountKey(), redisCountRequest.getTotalSizeKey());
+
+        redisAPI.mget(keys).onSuccess(result -> {
+            try {
+                // Ensure that result contains entries for all keys or defaults to null values
+                long apiCount = (result != null && result.size() > 0 && result.get(0) != null)
+                        ? Long.parseLong(result.get(0).toString()) : 0L;
+                long consumedData = (result != null && result.size() > 1 && result.get(1) != null)
+                        ? Long.parseLong(result.get(1).toString()) : 0L;
+
+                ConsumedDataInfo consumedDataInfo = new ConsumedDataInfo();
+                consumedDataInfo.setApiCount(apiCount);
+                consumedDataInfo.setConsumedData(consumedData);
+
+                promise.complete(consumedDataInfo);
+            } catch (NumberFormatException e) {
+                LOGGER.error("Failed to parse values from Redis result: {}", e.getMessage());
+                promise.fail("Error parsing data from Redis: " + e.getMessage());
+            }
+        }).onFailure(err -> {
+            LOGGER.error("Failed to get values from Redis for keys {}: {}", keys, err.getMessage());
+            promise.fail("Failed to get keys from Redis: " + err);
+        });
+
+        return promise.future();
+    }
+
+
+    @Override
+    public Future<ConsumedDataInfo> insertJson(String key, JsonObject jsonValue) {
         Promise<JsonObject> promise = Promise.promise();
         List<String> args = buildJsonSetArgs(key, jsonValue);
 
@@ -56,7 +76,7 @@ public class RedisServiceImpl implements RedisService {
             promise.fail("Failed to set key in Redis: " + err);
         });
 
-        return promise.future();
+        return null;
     }
 
     private List<String> buildJsonSetArgs(String key, JsonObject jsonValue) {

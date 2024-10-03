@@ -41,7 +41,7 @@ import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.TimeoutHandler;
 import iudx.resource.server.apiserver.common.ContextHelper;
-import iudx.resource.server.apiserver.common.DataAccesssLimitValidator;
+import iudx.resource.server.apiserver.common.DataAccessLimitValidator;
 import iudx.resource.server.apiserver.exceptions.DxRuntimeException;
 import iudx.resource.server.apiserver.handlers.AuthHandler;
 import iudx.resource.server.apiserver.handlers.DataAccessHandler;

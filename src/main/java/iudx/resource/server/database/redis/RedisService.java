@@ -6,16 +6,18 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import iudx.resource.server.dataLimitService.model.ConsumedDataInfo;
+import iudx.resource.server.dataLimitService.model.RedisCountRequest;
 
 @VertxGen
 @ProxyGen
 public interface  RedisService {
 
 
-    Future<JsonObject> getJson(String key);
+    Future<ConsumedDataInfo> getConsumedInfo(RedisCountRequest redisCountRequest);
 
 
-    Future<JsonObject> insertJson(String key, JsonObject jsonObject);
+    Future<ConsumedDataInfo> insertJson(String key, JsonObject jsonObject);
 
     @GenIgnore
     static RedisService createProxy(Vertx vertx, String address) {

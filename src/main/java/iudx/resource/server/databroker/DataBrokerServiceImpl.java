@@ -683,6 +683,7 @@ public class DataBrokerServiceImpl implements DataBrokerService {
                   if (resourceGroupId != null && !resourceGroupId.isBlank()) {
                     LOGGER.debug("Info : routingKey  " + routingKey);
                     Buffer buffer = Buffer.buffer(json.toString());
+
                     webClient
                         .getRabbitmqClient()
                         .basicPublish(
